@@ -1,0 +1,29 @@
+csv_path: E:\CursoPythonUdemyIntro\Allianz\sales_transactions.csv
+
+logging:
+  path: etl.log
+  level: INFO
+
+db:
+  dialect: postgresql
+  username: postgres
+  password: secret
+  host: localhost
+  port: 5432
+  database: mydb
+  table: sales
+
+etl:
+  chunk_size: 5000
+  insert_batch: 1000
+  max_workers: 4
+  incremental: true
+  metadata_table: etl_metadata
+
+encryption:
+  enabled: false
+  fernet_key: ""
+
+logging:
+  path: logs/etl.log
+  level: INFO

@@ -1,0 +1,21 @@
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env/
+
+# Logs and temporary files
+logs/
+*.log
+
+# CSV or raw data files (optional)
+*.csv
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+.vscode/

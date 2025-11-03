@@ -1,0 +1,20 @@
+# Core ETL dependencies
+pandas==2.2.3
+numpy==1.26.4
+pyyaml==6.0.2
+
+# Database drivers and ORM
+SQLAlchemy==2.0.34
+psycopg2-binary==2.9.9
+
+# Date and time handling
+python-dateutil==2.9.0.post0
+
+# Encryption and security
+cryptography==43.0.1
+
+# CLI and logging utilities
+argparse==1.4.0
+
+# Optional but recommended for formatting JSON safely
+simplejson==3.19.2
