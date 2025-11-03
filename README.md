@@ -1,55 +1,61 @@
 # ETL Python Sales Project
 
-ETL using Python to copy transactions data to a PostgreSQL DB.
+An ETL (Extract, Transform, Load) pipeline built in **Python** to process sales transaction data and load it into a **PostgreSQL** database.
 
-## Structure
-- `generate_mock_data.py` -mock file to simulate data
-- `etl.py` -main process
-- `config.yaml` - parametrices info
-- `db_schema.sql` - Schema and DB arquitecture
-- `requirements.txt` - dependencies
-- `Dockerfile`, `.dockerignore`
+---
+
+## Project Structure
+
+| File | Description |
+|------|--------------|
+| `generate_mock_data.py` | Mock data generator to simulate transactional sales data |
+| `etl.py` | Main ETL process (extract, transform, load) |
+| `config.yaml` | Configuration file for parameters and database connection |
+| `db_schema.sql` | Database schema definition (tables, metadata, etc.) |
+| `requirements.txt` | Python dependencies |
+| `Dockerfile`, `.dockerignore` | Containerization setup for deployment |
+
+---
 
 ## Quickstart
-1. Install dependencies:
-2. Mock Data Generation:
-3. Execute ETL:
 
-## Git / GitHub
-- Branch strategy: `main`, `feature/*`, `hotfix/*`
-- Pull request template en `.github/PULL_REQUEST_TEMPLATE.md`
+### Install Dependencies
+Create a virtual environment and install required packages:
+```bash
+python -m venv venv
+venv\Scripts\activate  # On Windows
+source venv/bin/activate  # On Mac/Linux
+pip install -r requirements.txt
 
-The main function is to load sales transactions froma a .csv fileto a SQL DB
-    Include incremental control
-    Data Quality
-    Field Ecrypt
-    Logging
-    Error managing
-    YAML file
 
-Main features:
-    Simulated sales data generation
-    Change management without data lost
-    YAML configuration
-    Docker bucket
-    Prepared for version control in GitHub
+Generate Mock Data
+python generate_mock_data.py
+python etl.py --config config.yaml
 
-# Repo inicialitation
+### Features
+
+Incremental Load – Only loads new transactions since the last ETL run
+Data Quality Validation – Detects missing values, duplicates, and outliers
+Field Encryption – Optionally encrypts sensitive fields (e.g., customer ID)
+Schema Evolution Handling – Stores unexpected columns as JSON in raw_payload
+Error Handling & Logging – Detailed logs saved to /logs/etl.log
+Configurable via YAML – All ETL parameters are externalized
+Parallel Inserts – Supports concurrent data loading for scalability
+Docker-Ready – Fully containerized setup for reproducible environments
+
+
+### Version Control and Git Workflow
+
 git init
 git add .
 git commit -m "Initial ETL project: mock data generator, ETL script, config, schema"
 
-# create remote (ex: GitHub)
-# manual repo creation --> `gh` CLI:
-# gh repo create <user>/etl-python-sales-project --public --source=. --remote=origin
-
+git remote add origin https://github.com/<your-username>/etl-python-sales-project.git
 git branch -M main
 git push -u origin main
-
-# Branches Workflow
 git checkout -b feature/incremental-load
-# Changes
+# Make changes
 git add .
 git commit -m "Improve incremental loading and parallel inserts"
 git push origin feature/incremental-load
-# PR creation in GitHub
+# Create Pull Request in GitHub
