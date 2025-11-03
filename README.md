@@ -2,7 +2,7 @@
 
 ETL using Python to copy transactions data to a PostgreSQL DB.
 
-## Estructura
+## Structure
 - `generate_mock_data.py` -mock file to simulate data
 - `etl.py` -main process
 - `config.yaml` - parametrices info
@@ -11,9 +11,9 @@ ETL using Python to copy transactions data to a PostgreSQL DB.
 - `Dockerfile`, `.dockerignore`
 
 ## Quickstart
-1. Instala dependencias:
-2. Genera mock data (opcional):
-3. Ejecuta ETL:
+1. Install dependencies:
+2. Mock Data Generation:
+3. Execute ETL:
 
 ## Git / GitHub
 - Branch strategy: `main`, `feature/*`, `hotfix/*`

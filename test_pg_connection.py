@@ -1,7 +1,7 @@
 import psycopg2
 from sqlalchemy import create_engine
 
-# Datos de conexión (puedes copiarlos del YAML)
+# Connection info
 db_config = {
     "dialect": "postgresql",
     "username": "postgres",
@@ -11,7 +11,7 @@ db_config = {
     "database": "mydb"
 }
 
-print("=== 🔍 PRUEBA DE CONEXIÓN DIRECTA (psycopg2) ===")
+print("=== Test Connection (psycopg2) ===")
 try:
     conn = psycopg2.connect(
         dbname=db_config["database"],
@@ -21,22 +21,22 @@ try:
         port=db_config["port"],
         options="-c client_encoding=UTF8"
     )
-    print("✅ Conexión directa exitosa (psycopg2)")
+    print(" Direct Connection OK (psycopg2)")
     cur = conn.cursor()
     cur.execute("SELECT version();")
-    print("PostgreSQL versión:", cur.fetchone())
+    print("PostgreSQL version:", cur.fetchone())
     cur.close()
     conn.close()
 except Exception as e:
-    print("❌ Error en conexión directa:", e)
+    print(" Connection Test Error:", e)
 
-print("\n=== 🔍 PRUEBA DE CONEXIÓN SQLALCHEMY ===")
+print("\n=== Test Connection SQLALCHEMY ===")
 try:
     conn_str = (
         f"postgresql+psycopg2://{db_config['username']}:{db_config['password']}"
         f"@{db_config['host']}:{db_config['port']}/{db_config['database']}"
     )
-    print("Cadena de conexión:", conn_str)
+    print("Connection Chain:", conn_str)
 
     engine = create_engine(
         conn_str,
@@ -46,6 +46,6 @@ try:
 
     with engine.connect() as conn:
         result = conn.execute("SELECT current_database();")
-        print("✅ SQLAlchemy conectado a la base:", result.scalar())
+        print(" SQLAlchemy Connected to DB:", result.scalar())
 except Exception as e:
-    print("❌ Error en conexión SQLAlchemy:", e)
+    print("Connection Error SQLAlchemy:", e)

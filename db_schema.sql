@@ -1,4 +1,4 @@
--- Schema inicial para la tabla sales (SQLite/Postgres compatible)
+-- Schema for sales table (PostgresSQL)
 CREATE TABLE IF NOT EXISTS sales (
 transaction_id TEXT PRIMARY KEY,
 customer_id TEXT NOT NULL,

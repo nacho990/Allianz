@@ -18,4 +18,4 @@ with open("db_schema.sql","r",encoding="utf-8") as f:
 with engine.begin() as conn:
     conn.exec_driver_sql(sql)
 
-print("✅ db_schema.sql ejecutado con SQLAlchemy.")
+print(" OK db_schema.sql with SQLAlchemy.")
