@@ -58,4 +58,3 @@ git checkout -b feature/incremental-load
 git add .
 git commit -m "Improve incremental loading and parallel inserts"
 git push origin feature/incremental-load
-# Create Pull Request in GitHub
