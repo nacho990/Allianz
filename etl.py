@@ -1,23 +1,3 @@
-#!/usr/bin/env python3
-"""
-etl.py
-------------------------------------------------------------
-ETL (Extract, Transform, Load) Pipeline
-
-Core features:
-- Reads CSV files in chunks for memory efficiency
-- Transforms and validates incoming data
-- Optionally encrypts sensitive fields (e.g., customer_id)
-- Inserts data into the 'sales' table in PostgreSQL
-- Supports incremental loads and concurrent inserts
-- Handles schema drift by storing unexpected fields
-  as JSON inside a 'raw_payload' column
-------------------------------------------------------------
-Author: Your Name
-Version: 1.0
-Date: 2025-11-03
-"""
-
 import os
 import argparse
 import logging
@@ -32,33 +12,14 @@ from sqlalchemy.exc import IntegrityError, OperationalError
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from cryptography.fernet import Fernet
 
-# ======================================================
-# Environment setup
-# ======================================================
-
-# Base directory for relative paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Set encoding variables to ensure UTF-8 compatibility
 os.environ["LC_MESSAGES"] = "C"
 os.environ["PYTHONIOENCODING"] = "utf-8"
 os.environ["PGCLIENTENCODING"] = "utf-8"
 
 
-# ======================================================
-# Helpers: Configuration and Logging
-# ======================================================
-
 def load_config(path='config.yaml'):
-    """
-    Loads the YAML configuration file and applies environment variable overrides.
-
-    Args:
-        path (str): Path to the YAML configuration file.
-
-    Returns:
-        dict: Parsed configuration dictionary.
-    """
     with open(path, 'r', encoding='utf-8') as f:
         cfg = yaml.safe_load(f)
 
@@ -71,13 +32,6 @@ def load_config(path='config.yaml'):
 
 
 def setup_logging(path, level='INFO'):
-    """
-    Configures logging to both file and console outputs.
-
-    Args:
-        path (str): Path to the log file.
-        level (str): Logging level (e.g., DEBUG, INFO, WARNING, ERROR).
-    """
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
     logging.basicConfig(
@@ -92,23 +46,8 @@ def setup_logging(path, level='INFO'):
     console.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
     logging.getLogger().addHandler(console)
 
-
-# ======================================================
-# Database Connection and Schema Management
-# ======================================================
-
+#Database Connection and Schema Management
 def build_connection_string(cfg_db):
-    """
-    Constructs an SQLAlchemy-compatible database connection string.
-
-    Supports both PostgreSQL and SQLite.
-
-    Args:
-        cfg_db (dict): Database configuration parameters.
-
-    Returns:
-        str: SQLAlchemy connection string.
-    """
     dialect = cfg_db.get('dialect', 'sqlite')
 
     if dialect == 'sqlite':
@@ -125,15 +64,6 @@ def build_connection_string(cfg_db):
 
 
 def ensure_schema(engine, schema_file='db_schema.sql'):
-    """
-    Ensures that the database schema exists.
-
-    Reads and executes the SQL DDL statements from a schema file.
-
-    Args:
-        engine (sqlalchemy.Engine): SQLAlchemy engine object.
-        schema_file (str): Path to SQL file containing schema definition.
-    """
     if not os.path.exists(schema_file):
         logging.warning("Schema file %s not found; skipping schema creation", schema_file)
         return
@@ -143,23 +73,7 @@ def ensure_schema(engine, schema_file='db_schema.sql'):
         conn.exec_driver_sql(sql)
     logging.info("Ensured DB schema from %s", schema_file)
 
-
-# ======================================================
-# Encryption Helpers
-# ======================================================
-
 def get_fernet(key=None):
-    """
-    Initializes a Fernet encryption object.
-
-    If no key is provided, a new one is generated and logged.
-
-    Args:
-        key (str|bytes|None): Encryption key.
-
-    Returns:
-        Fernet: Encryption object.
-    """
     if key:
         return Fernet(key.encode() if isinstance(key, str) else key)
     else:
@@ -167,27 +81,7 @@ def get_fernet(key=None):
         logging.warning("No fernet_key provided. Generated key: %s — save it to decrypt later.", k.decode())
         return Fernet(k)
 
-
-# ======================================================
-# Data Quality and Schema Harmonization
-# ======================================================
-
 def data_quality_checks(df):
-    """
-    Performs basic data quality checks on a DataFrame.
-
-    Checks for:
-      - Missing values
-      - Duplicate transaction IDs
-      - Non-positive quantities
-      - Quantity outliers (above 99th percentile)
-
-    Args:
-        df (pd.DataFrame): Input DataFrame.
-
-    Returns:
-        list[dict]: List of identified data quality issues.
-    """
     issues = []
 
     # Check for missing values
@@ -216,19 +110,7 @@ def data_quality_checks(df):
 
 
 def harmonize_schema(df, expected_cols):
-    """
-    Aligns incoming data with the expected schema.
 
-    - Adds missing columns with nulls.
-    - Moves unexpected columns into a 'raw_payload' JSON column.
-
-    Args:
-        df (pd.DataFrame): Input data.
-        expected_cols (list): Expected column names.
-
-    Returns:
-        pd.DataFrame: Harmonized DataFrame.
-    """
     # Add missing expected columns
     for col in expected_cols:
         if col not in df.columns:
@@ -245,26 +127,8 @@ def harmonize_schema(df, expected_cols):
     cols = expected_cols + (['raw_payload'] if 'raw_payload' in df.columns else [])
     return df[cols]
 
-
-# ======================================================
-# Transformations
-# ======================================================
-
 def transform_chunk(df, fernet=None):
-    """
-    Applies necessary transformations to a data chunk.
 
-    - Converts timestamp → sale_date
-    - Normalizes quantity to integer
-    - Encrypts IDs if encryption is enabled
-
-    Args:
-        df (pd.DataFrame): Input data chunk.
-        fernet (Fernet|None): Optional encryption object.
-
-    Returns:
-        pd.DataFrame: Transformed data.
-    """
     df = df.copy()
     df['sale_date'] = pd.to_datetime(df['timestamp'], errors='coerce')
     df['quantity'] = pd.to_numeric(df['quantity'], errors='coerce').fillna(0).astype(int)
@@ -278,20 +142,13 @@ def transform_chunk(df, fernet=None):
 
     return df
 
-
-# ======================================================
-# Load Functions
-# ======================================================
-
 def get_last_load(engine, metadata_table):
-    """Retrieve the timestamp of the last successful ETL execution."""
     with engine.begin() as conn:
         res = conn.execute(text(f"SELECT value FROM {metadata_table} WHERE key='last_load'")).fetchone()
         return res[0] if res else None
 
 
 def set_last_load(engine, metadata_table, value):
-    """Update or insert the 'last_load' timestamp in the ETL metadata table."""
     with engine.begin() as conn:
         dialect = engine.dialect.name
         if dialect == 'sqlite':
@@ -309,20 +166,6 @@ def set_last_load(engine, metadata_table, value):
 
 
 def load_subchunk(engine, table_name, df_sub):
-    """
-    Inserts a small batch of rows (sub-chunk) into the target table.
-
-    Uses bulk insertion for performance.
-    Falls back to row-by-row insertion if IntegrityError occurs.
-
-    Args:
-        engine (sqlalchemy.Engine): Active SQLAlchemy engine.
-        table_name (str): Destination table name.
-        df_sub (pd.DataFrame): Data subset to insert.
-
-    Returns:
-        int: Number of successfully inserted rows.
-    """
     try:
         df_sub.to_sql(table_name, engine, if_exists='append', index=False)
         return len(df_sub)
@@ -343,20 +186,7 @@ def load_subchunk(engine, table_name, df_sub):
         logging.exception("Operational error during insertion")
         raise
 
-
-# ======================================================
-# Main ETL Pipeline
-# ======================================================
-
 def run_etl(config_path):
-    """
-    Executes the complete ETL process:
-    - Loads configuration
-    - Connects to the database and ensures schema
-    - Reads CSV data in chunks
-    - Transforms, validates, and loads data
-    - Updates ETL metadata table
-    """
     cfg = load_config(os.path.join(BASE_DIR, config_path))
     setup_logging(cfg['logging']['path'], cfg['logging'].get('level', 'INFO'))
     logging.info("Starting ETL run")
@@ -412,7 +242,6 @@ def run_etl(config_path):
 
     # Helper: safe JSON serialization
     def safe_json_dumps(obj):
-        """Safely converts pandas/numpy objects to JSON serializable types."""
         def default(o):
             if isinstance(o, (pd.Timestamp, datetime)): return o.isoformat()
             elif isinstance(o, (np.integer, int)): return int(o)
@@ -453,7 +282,7 @@ def run_etl(config_path):
             cols.append('raw_payload')
         insert_df = insert_df[cols]
 
-        # Parallelized loading
+        # Parallel loading
         sub_batch = max(1, int(insert_batch))
         with ThreadPoolExecutor(max_workers=max_workers) as ex:
             futures = []
@@ -469,7 +298,7 @@ def run_etl(config_path):
                 total_inserted += inserted
                 logging.info("Inserted %d rows (subchunk)", inserted)
 
-    # Update ETL metadata
+    # Update metadata
     now_iso = datetime.now(timezone.utc).isoformat()
     try:
         set_last_load(engine, metadata_table, now_iso)
@@ -477,17 +306,12 @@ def run_etl(config_path):
     except Exception:
         logging.exception("Failed to update last_load metadata")
 
-    logging.info("ETL completed successfully. Total rows inserted: %d", total_inserted)
+    logging.info("ETL Sucess. Total rows inserted: %d", total_inserted)
     return total_inserted
 
-
-# ======================================================
-# Script Entry Point
-# ======================================================
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run the ETL pipeline with a given config file.")
-    parser.add_argument('--config', '-c', default='config.yaml', help='Path to YAML configuration file')
+    parser = argparse.ArgumentParser(description="Run with config file.")
+    parser.add_argument('--config', '-c', default='config.yaml', help='YAML Path')
     args = parser.parse_args()
 
     try:
